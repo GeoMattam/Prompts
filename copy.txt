@@ -63,3 +63,48 @@ async def log_requests(request: Request, call_next):
         f"{request.client.host} - {request.method} {request.url.path} - user_id={user_id} - {response.status_code} - {duration:.2f}s"
     )
     return response
+
+import logging
+from logging.handlers import TimedRotatingFileHandler
+import os
+
+os.makedirs("logs", exist_ok=True)
+
+# Log format includes filename and line number
+formatter = logging.Formatter(
+    fmt="%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
+)
+
+# --- ACCESS LOGGER ---
+access_logger = logging.getLogger("access_logger")
+access_logger.setLevel(logging.INFO)
+
+access_handler = TimedRotatingFileHandler(
+    filename="logs/access.log",
+    when="midnight",              # rotate daily at midnight
+    interval=1,
+    backupCount=7,                # keep last 7 days
+    encoding="utf-8"
+)
+access_handler.setFormatter(formatter)
+access_handler.suffix = "%Y-%m-%d"  # adds date to filename like access.log.2025-06-18
+access_logger.addHandler(access_handler)
+
+# --- APP LOGGER ---
+app_logger = logging.getLogger("app_logger")
+app_logger.setLevel(logging.INFO)
+
+app_handler = TimedRotatingFileHandler(
+    filename="logs/app.log",
+    when="midnight",
+    interval=1,
+    backupCount=7,
+    encoding="utf-8"
+)
+app_handler.setFormatter(formatter)
+app_handler.suffix = "%Y-%m-%d"
+app_logger.addHandler(app_handler)
+
+formatter = logging.Formatter(
+    fmt="%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
+)
