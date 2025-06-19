@@ -1,0 +1,65 @@
+logging_config.py
+
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+
+os.makedirs("logs", exist_ok=True)
+
+# Access logger
+access_logger = logging.getLogger("access_logger")
+access_handler = RotatingFileHandler("logs/access.log", maxBytes=10_000_000, backupCount=5)
+access_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
+access_logger.setLevel(logging.INFO)
+access_logger.addHandler(access_handler)
+
+# App logger
+app_logger = logging.getLogger("app_logger")
+app_handler = RotatingFileHandler("logs/app.log", maxBytes=10_000_000, backupCount=5)
+app_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+app_logger.setLevel(logging.INFO)
+app_logger.addHandler(app_handler)
+
+routes
+from logging_config import access_logger, app_logger
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration = time.time() - start_time
+
+    access_logger.info(
+        f"{request.client.host} - {request.method} {request.url.path} - {response.status_code} - {duration:.2f}s"
+    )
+    return response
+
+method
+app_logger.error(f"Something went wrong: {e}")
+
+logs/access.log
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+
+    # Read and clone body for reuse
+    body_bytes = await request.body()
+    request._body = body_bytes  # hack to reuse in downstream
+
+    # Try to parse JSON body
+    user_id = "N/A"
+    if request.method == "POST":
+        try:
+            body_json = json.loads(body_bytes.decode("utf-8"))
+            user_id = body_json.get("user_id", "N/A")
+        except Exception as e:
+            app_logger.warning(f"Failed to parse body: {e}")
+
+    response = await call_next(request)
+    duration = time.time() - start_time
+
+    access_logger.info(
+        f"{request.client.host} - {request.method} {request.url.path} - user_id={user_id} - {response.status_code} - {duration:.2f}s"
+    )
+    return response
